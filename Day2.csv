@@ -1,0 +1,12 @@
+aid,a_name,addrid,addr1,addr2,city,pstate,country,postalcd,contactnumber,attendancekey,attendancedate,attendedyesno
+332708,Ramkumar,99801,No-13 4rthcrossst,GandhiNagar,Bangalore,Karnataka,India,456009,7800912345,20001,2019-Dec-02,No
+332709,Rajkumar,99802,No-14 5thcrossst,NehruNagar,Hyderabad,Telangana,India,556001,6800612345,20002,2019-Dec-02,Yes
+332710,Priya,99803,No-15 6thcrossst,SardarNagar,Ahmedabad,Gujarat,India,356009,9800912345,20003,2019-Dec-02,No
+332711,Renuka,89804,No-20 7thcrossst,PatelNagar,Bangalore,Karnataka,India,455005,5800912345,20004,2019-Dec-02,Yes
+332712,Dileep,99805,No-17 8thcrossst,AnnaNagar,Chennai,TamilNadu,India,456009,4800912345,20005,2019-Dec-02,Yes
+332713,Sukumar,99806,No-18 9thcrossst,GandhiNagar,Bangalore,Karnataka,India,456009,6800912345,20006,2019-Dec-02,Yes
+332714,Ravikumar,89807,No-19 15thcrossst,NehruNagar,Bangalore,Karnataka,India,444004,5800912345,20007,2019-Dec-02,Yes
+332715,Tejasree,99808,No-20 11thcrossst,PatelNagar,Bangalore,Karnataka,India,456009,2800912345,20008,2019-Dec-02,Yes
+332716,Sreeharsha,99809,No-21 12thcrossst,AnnaNagar,Bangalore,Karnataka,India,456009,8800912345,20009,2019-Dec-02,Yes
+332717,Venkatesh,99810,No-22 13thcrossst,SardarNagar,Ahmedabad,Gujarat,India,356009,9000912345,20010,2019-Dec-02,No
+332718,Yaseen Shaik,99811,No-24 14thcrossst,SardarNagar,Bhubaneshwar,Odissa,India,256009,9000912999,20011,2019-Dec-02,Yes
