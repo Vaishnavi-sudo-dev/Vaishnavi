@@ -1,0 +1,34 @@
+CREATE TABLE public.student
+(
+    aid bigint NOT NULL,
+    a_name character varying COLLATE pg_catalog."default",
+    active_ind character varying(5) COLLATE pg_catalog."default",
+    addrid character varying COLLATE pg_catalog."default",
+    temp2 integer NOT NULL DEFAULT nextval('student_temp_seq'::regclass),
+    CONSTRAINT student_pkey PRIMARY KEY (temp2)
+)
+CREATE TABLE public.address
+(
+    addrid bigint,
+    addr1 character varying COLLATE pg_catalog."default",
+    addr2 character varying COLLATE pg_catalog."default",
+    city character varying COLLATE pg_catalog."default",
+    pstate character varying COLLATE pg_catalog."default",
+    country character varying COLLATE pg_catalog."default",
+    postalcd bigint,
+    contactnumber bigint,
+    aid bigint,
+    active_ind character varying COLLATE pg_catalog."default",
+    address_key bigint NOT NULL DEFAULT nextval('address_address_key_seq'::regclass),
+    CONSTRAINT address_pkey PRIMARY KEY (address_key)
+)
+CREATE TABLE public.attendance
+(
+    attendedyesno character varying COLLATE pg_catalog."default",
+    active_ind character varying(5) COLLATE pg_catalog."default",
+    attendancekey bigint NOT NULL,
+    attendancedate date,
+    aid bigint,
+    temp1 integer NOT NULL DEFAULT nextval('attendance_temp1_seq'::regclass),
+    CONSTRAINT attendance_pkey PRIMARY KEY (temp1)
+)
