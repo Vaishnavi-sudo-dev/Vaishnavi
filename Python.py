@@ -8,7 +8,12 @@ for file in os.listdir('.'):
         lines = fl.readlines()[1:]
         for line in lines:
             values = line.strip().split(',')
+            insert_loading_zone_query = (f"insert into public.loading_zone(aid, a_name, addrid, addr1, addr2, city, pstate, country, postalcd, contactnumber, attendancekey, attendancedate, attendedyesno) "
+                                    f"values({values[0]}, '{values[1]}', {values[2]}, '{values[3]}', '{values[4]}', '{values[5]}', '{values[6]}', '{values[7]}', {values[8]}, {values[9]}, {values[10]}, '{values[11]}', '{values[12]}')")
+            update_stage_table_query = (f"update public.stage_table set action_indicator='U' where aid={values[0]}")
 
+            insert_stage_table_query = (f"insert into public.stage_table(aid, a_name, addrid, addr1, addr2, city, pstate, country, postalcd, contactnumber, attendancekey, attendancedate, attendedyesno, action_indicator) "
+                                    f"values({values[0]}, '{values[1]}', {values[2]}, '{values[3]}', '{values[4]}', '{values[5]}', '{values[6]}', '{values[7]}', {values[8]}, {values[9]}, {values[10]}, '{values[11]}', '{values[12]}', 'I')")
             update_student_query = (f"update public.student set active_ind='N' where aid={values[0]}")
             insert_student_query = (f"insert into public.student(aid, a_name, addrid,active_ind) "
                                     f"values({values[0]}, '{values[1]}', {values[2]},'Y')"
@@ -22,6 +27,10 @@ for file in os.listdir('.'):
             insert_attendance_query = (f"insert into public.attendance(attendedyesno, active_ind, attendancekey, "
                                        f"attendancedate, aid) "
                                        f"values('{values[12]}', 'Y', {values[10]}, '{values[11]}', {values[0]})")
+            #cur.execute(update_loading_zone_query)
+            cur.execute(insert_loading_zone_query)
+            cur.execute(update_stage_table_query)
+            cur.execute(insert_stage_table_query)
             cur.execute(update_student_query)
             cur.execute(insert_student_query)
             cur.execute(update_address_query)
