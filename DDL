@@ -1,37 +1,3 @@
-CREATE TABLE public.student
-(
-    aid bigint NOT NULL,
-    a_name character varying COLLATE pg_catalog."default",
-    active_ind character varying(5) COLLATE pg_catalog."default",
-    addrid character varying COLLATE pg_catalog."default",
-    temp2 integer NOT NULL DEFAULT nextval('student_temp_seq'::regclass),
-    CONSTRAINT student_pkey PRIMARY KEY (temp2)
-)
-CREATE TABLE public.address
-(
-    addrid bigint,
-    addr1 character varying COLLATE pg_catalog."default",
-    addr2 character varying COLLATE pg_catalog."default",
-    city character varying COLLATE pg_catalog."default",
-    pstate character varying COLLATE pg_catalog."default",
-    country character varying COLLATE pg_catalog."default",
-    postalcd bigint,
-    contactnumber bigint,
-    aid bigint,
-    active_ind character varying COLLATE pg_catalog."default",
-    address_key bigint NOT NULL DEFAULT nextval('address_address_key_seq'::regclass),
-    CONSTRAINT address_pkey PRIMARY KEY (address_key)
-)
-CREATE TABLE public.attendance
-(
-    attendedyesno character varying COLLATE pg_catalog."default",
-    active_ind character varying(5) COLLATE pg_catalog."default",
-    attendancekey bigint NOT NULL,
-    attendancedate date,
-    aid bigint,
-    temp1 integer NOT NULL DEFAULT nextval('attendance_temp1_seq'::regclass),
-    CONSTRAINT attendance_pkey PRIMARY KEY (temp1)
-)
 CREATE TABLE public.loading_zone
 (
     aid bigint,
@@ -46,14 +12,29 @@ CREATE TABLE public.loading_zone
     contactnumber bigint,
     attendancekey bigint,
     attendancedate date,
-    attendedyesno character varying COLLATE pg_catalog."default",
-    lzkey integer NOT NULL DEFAULT nextval('loading_zone_lzkey_seq'::regclass),
-    CONSTRAINT loading_zone_pkey PRIMARY KEY (lzkey)
+    attendedyesno character varying COLLATE pg_catalog."default"
 )
-CREATE TABLE public.stage_table
+
+CREATE TABLE public.stg_student
 (
-    aid bigint,
+    aid bigint NOT NULL,
     a_name character varying COLLATE pg_catalog."default",
+    id_key character varying COLLATE pg_catalog."default",
+    action_indicator character varying COLLATE pg_catalog."default",
+    attendancekey bigint
+)
+
+CREATE TABLE public.student
+(
+    aid bigint NOT NULL,
+    a_name character varying COLLATE pg_catalog."default",
+    active_ind character varying COLLATE pg_catalog."default",
+    id_key character varying COLLATE pg_catalog."default",
+    attendancekey bigint
+)
+
+CREATE TABLE public.stg_address
+(
     addrid bigint,
     addr1 character varying COLLATE pg_catalog."default",
     addr2 character varying COLLATE pg_catalog."default",
@@ -62,10 +43,42 @@ CREATE TABLE public.stage_table
     country character varying COLLATE pg_catalog."default",
     postalcd bigint,
     contactnumber bigint,
-    attendancekey bigint,
-    attendancedate date,
-    attendedyesno character varying COLLATE pg_catalog."default",
-    stg integer NOT NULL DEFAULT nextval('stage_table_stg_seq'::regclass),
+    aid bigint,
     action_indicator character varying COLLATE pg_catalog."default",
-    CONSTRAINT stage_table_pkey PRIMARY KEY (stg)
+    id_key character varying COLLATE pg_catalog."default"
+)
+
+CREATE TABLE public.address
+(
+    addrid bigint,
+    addr1 character varying COLLATE pg_catalog."default",
+    addr2 character varying COLLATE pg_catalog."default",
+    city character varying COLLATE pg_catalog."default",
+    pstate character varying COLLATE pg_catalog."default",
+    country character varying COLLATE pg_catalog."default",
+    postalcd bigint,
+    contactnumber bigint,
+    aid bigint,
+    active_ind character varying COLLATE pg_catalog."default",
+    id_key character varying COLLATE pg_catalog."default"
+)
+
+CREATE TABLE public.stg_attendance
+(
+    attendedyesno character varying COLLATE pg_catalog."default",
+    action_indicator character varying(5) COLLATE pg_catalog."default",
+    attendancekey bigint NOT NULL,
+    attendancedate date,
+    id_key character varying COLLATE pg_catalog."default",
+    aid bigint
+)
+
+CREATE TABLE public.attendance
+(
+    attendedyesno character varying COLLATE pg_catalog."default",
+    active_ind character varying(5) COLLATE pg_catalog."default",
+    attendancekey bigint NOT NULL,
+    attendancedate date,
+    aid bigint,
+    id_key character varying COLLATE pg_catalog."default"
 )
