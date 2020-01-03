@@ -1,0 +1,104 @@
+CREATE TABLE public."Audit_Key"
+(
+    audit_key bigint,
+    create_dt date,
+    source_nm character varying COLLATE pg_catalog."default"
+)
+
+CREATE TABLE public."Audit_Status"
+(
+    "Table_nm" character varying COLLATE pg_catalog."default",
+    "Audit_key" bigint,
+    created_dt date,
+    update_dt date,
+    "Source_nm" character varying COLLATE pg_catalog."default",
+    "Source_count" bigint,
+    "Target_count" bigint,
+    "Target_insert" character varying COLLATE pg_catalog."default",
+    "Target_update" character varying COLLATE pg_catalog."default"
+)
+
+CREATE TABLE public.address
+(
+    addrid bigint,
+    addr1 character varying COLLATE pg_catalog."default",
+    addr2 character varying COLLATE pg_catalog."default",
+    city character varying COLLATE pg_catalog."default",
+    pstate character varying COLLATE pg_catalog."default",
+    country character varying COLLATE pg_catalog."default",
+    postalcd bigint,
+    contactnumber bigint,
+    aid bigint,
+    active_ind character varying COLLATE pg_catalog."default",
+    id_key character varying COLLATE pg_catalog."default"
+)
+
+CREATE TABLE public.attendance
+(
+    attendedyesno character varying COLLATE pg_catalog."default",
+    active_ind character varying(5) COLLATE pg_catalog."default",
+    attendancekey bigint NOT NULL,
+    attendancedate date,
+    aid bigint,
+    id_key character varying COLLATE pg_catalog."default"
+)
+
+CREATE TABLE public.loading_zone
+(
+    aid bigint,
+    a_name character varying COLLATE pg_catalog."default",
+    addrid bigint,
+    addr1 character varying COLLATE pg_catalog."default",
+    addr2 character varying COLLATE pg_catalog."default",
+    city character varying COLLATE pg_catalog."default",
+    pstate character varying COLLATE pg_catalog."default",
+    country character varying COLLATE pg_catalog."default",
+    postalcd bigint,
+    contactnumber bigint,
+    attendancekey bigint,
+    attendancedate date,
+    attendedyesno character varying COLLATE pg_catalog."default"
+)
+
+CREATE TABLE public.stg_address
+(
+    addrid bigint,
+    addr1 character varying COLLATE pg_catalog."default",
+    addr2 character varying COLLATE pg_catalog."default",
+    city character varying COLLATE pg_catalog."default",
+    pstate character varying COLLATE pg_catalog."default",
+    country character varying COLLATE pg_catalog."default",
+    postalcd bigint,
+    contactnumber bigint,
+    aid bigint,
+    action_indicator character varying COLLATE pg_catalog."default",
+    id_key character varying COLLATE pg_catalog."default"
+)
+
+CREATE TABLE public.stg_attendance
+(
+    attendedyesno character varying COLLATE pg_catalog."default",
+    action_indicator character varying(5) COLLATE pg_catalog."default",
+    attendancekey bigint NOT NULL,
+    attendancedate date,
+    id_key character varying COLLATE pg_catalog."default",
+    aid bigint
+)
+
+CREATE TABLE public.stg_student
+(
+    aid bigint NOT NULL,
+    a_name character varying COLLATE pg_catalog."default",
+    id_key character varying COLLATE pg_catalog."default",
+    action_indicator character varying COLLATE pg_catalog."default",
+    attendancekey bigint
+)
+
+CREATE TABLE public.student
+(
+    aid bigint NOT NULL,
+    a_name character varying COLLATE pg_catalog."default",
+    active_ind character varying COLLATE pg_catalog."default",
+    id_key character varying COLLATE pg_catalog."default",
+    attendancekey bigint
+)
