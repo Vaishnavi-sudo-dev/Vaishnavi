@@ -1,0 +1,303 @@
+import csv
+import psycopg2
+import datetime
+import sys
+
+conn = psycopg2.connect(user="postgres", password="Vai123&*", database="random", host="localhost", port=5432)
+cur = conn.cursor()
+
+aud_key = '00000000'
+aud_key = datetime.date.today()
+try:
+    # store data in audit_key table
+    aud_key_table = "INSERT INTO AUDIT_KEY(audit_key,create_dt,source_nm) VALUES(%s,%s,%s)"
+    cur.execute(aud_key_table, (aud_key, aud_key, sys.argv[1]))
+
+    # commit changes
+    conn.commit()
+
+except Exception as e:
+    print("Error1 : ", str(e))
+    conn.rollback()
+
+truncate_lz = "truncate table loading_zone"
+cur.execute(truncate_lz)
+with open('Day2.txt', 'r') as csv_file:
+    csv_reader = csv.reader(csv_file)
+    next(csv_reader)
+    num_lines = 0
+    for line in csv_reader:
+        num_lines += 1
+        try:
+            insert_loading_zone_query = (
+                f"insert into public.loading_zone(aid, a_name, addrid, addr1, addr2, city, pstate, country, postalcd, contactnumber, attendancekey, attendancedate, attendedyesno) "
+                f"values( {line[0]}, '{line[1]}', {line[2]}, '{line[3]}', '{line[4]}', '{line[5]}', '{line[6]}', '{line[7]}', {line[8]}, {line[9]}, {line[10]}, '{line[11]}', '{line[12]}')")
+            cur.execute(insert_loading_zone_query)
+            conn.commit()
+        except Exception as e:
+            print("Error 2:", str(e))
+            conn.rollback()
+
+    # update audit_status for loading_zone
+try:
+    aud_stat_lz_table = "INSERT INTO Audit_Status(table_nm,audit_key,created_dt,update_dt,source_nm,source_count,target_count,target_insert,target_update) SELECT 'loading_zone',%s,%s,%s,%s,%s,COUNT(*),COUNT(*),0 FROM loading_zone"
+    cur.execute(aud_stat_lz_table, (aud_key, aud_key, aud_key, sys.argv[1], num_lines))
+
+    # commit changes
+    conn.commit()
+
+except Exception as e:
+    print("Error 3: ", str(e))
+    conn.rollback()
+
+    try:
+        trunc_stage_table = "truncate table stg_address"
+        cur.execute(trunc_stage_table)
+        conn.commit()
+    except Exception as e:
+        print("Error 4:", str(e))
+        conn.rollback()
+
+    try:
+        insert_stage_table = "INSERT INTO stg_address (id_key, aid,addrid, addr1, addr2, city, pstate, country, postalcd, contactnumber) SELECT MD5(CONCAT(aid::text,addrid::text)),aid, addrid, addr1, addr2, city, pstate, country, postalcd, contactnumber from loading_zone"
+        cur.execute(insert_stage_table)
+        conn.commit()
+        view_st = "create view a as (select s.aid from stg_address as s inner join address on s.aid=address.aid)"
+        cur.execute(view_st)
+        inorup_stage_table = "update stg_address set action_indicator = case when aid in ( select aid from a) then 'U' else 'I' end"
+        cur.execute(inorup_stage_table)
+        cur.execute("drop view a")
+        conn.commit()
+    except Exception as e:
+        print("Error 5:", str(e))
+        print("check if already updated")
+        conn.rollback()
+
+# update audit_status table for stg_address
+try:
+    count_lz = "SELECT COUNT(*) FROM loading_zone"
+    cur.execute(count_lz)
+    source_count = cur.fetchone()
+
+    aud_stat_st_table = "INSERT INTO Audit_Status(Table_nm,audit_key,created_dt,update_dt,source_nm,source_count,target_count,target_insert,target_update) SELECT 'STg_address',%s,%s,%s,'loading_zone',%s,COUNT(*),COUNT(*),0 FROM stg_address s WHERE audit_key =s.audit_key"
+    cur.execute(aud_stat_st_table, (aud_key, aud_key, aud_key, source_count))
+
+    # commit changes
+    conn.commit()
+
+except Exception as e:
+    print("Error 6: ", str(e))
+    conn.rollback()
+
+    try:
+        insert_address_table = "INSERT INTO address (id_key,aid, addrid, addr1, addr2, city, pstate, country, postalcd, contactnumber) SELECT  id_key,aid,addrid, addr1, addr2, city, pstate, country, postalcd, contactnumber from stg_address"
+        cur.execute(insert_address_table)
+        conn.commit()
+        upn_base_table = "update address set active_ind='N' where aid in ( select aid from stg_address where action_indicator='U')"
+        cur.execute(upn_base_table)
+        view_base = " create view d as (select s.id_key,row_number() over (partition by s.aid order by s.addrid) from stg_address as s inner join address on s.aid=address.aid)"
+        cur.execute(view_base)
+        upy_base_table = "update address set active_ind='Y' where id_key in ( select id_key from stg_address where id_key in (select id_key from d where row_number=1))"
+        cur.execute(upy_base_table)
+        cur.execute("drop view d")
+        conn.commit()
+    except Exception as e:
+        print("Error 7:", str(e))
+        print("check if already updated")
+        conn.rollback()
+
+# update audit status for address
+try:
+    count_base_table = "SELECT  COUNT(*) FROM stg_address "
+    cur.execute(count_base_table)
+    stg_count = cur.fetchone()
+
+    counti_base_tb = "SELECT SUM(CASE WHEN action_indicator = 'I' THEN 1 ELSE 0 END) AS insert_count FROM stg_address"
+    cur.execute(counti_base_tb)
+    base_icount = cur.fetchone()
+
+    countu_base_tb = "SELECT SUM(CASE WHEN action_indicator = 'U' THEN 1 ELSE 0 END) AS update_count FROM stg_address"
+    cur.execute(countu_base_tb)
+    base_ucount = cur.fetchone()
+
+    aud_stat_base_table = "INSERT INTO Audit_Status(Table_nm,Audit_key,created_dt,update_dt,Source_nm,Source_count,Target_count,Target_insert,Target_update) SELECT 'address',%s,%s,%s,'stg_address',%s,COUNT(*),%s,%s FROM address b WHERE Audit_key = b.audit_key"
+    cur.execute(aud_stat_base_table, (aud_key, aud_key, aud_key, stg_count, base_icount, base_ucount))
+
+    # status update
+    up_aud_stat = "UPDATE Audit_Status SET Status= CASE WHEN Source_count = Target_count THEN 'M' ELSE 'F' END"
+    cur.execute(up_aud_stat)
+
+    # commit changes
+    conn.commit()
+
+except Exception as e:
+    print("Error 8: ", str(e))
+    conn.rollback()
+
+    try:
+        trunc_stage_table = "truncate table stg_student"
+        cur.execute(trunc_stage_table)
+        conn.commit()
+    except Exception as e:
+        print("Error:", str(e))
+        conn.rollback()
+    try:
+        insert_stage_table = "INSERT INTO stg_student (id_key,aid,a_name,attendancekey) SELECT MD5(CONCAT(aid::text,a_name::text)), aid, a_name,attendancekey from loading_zone"
+        cur.execute(insert_stage_table)
+        conn.commit()
+        view_st = "create view b as (select s.aid from stg_student as s inner join student on s.aid=student.aid)"
+        cur.execute(view_st)
+        inorup_stage_table = "update stg_student set action_indicator = case when aid in ( select aid from b) then 'U' else 'I' end"
+        cur.execute(inorup_stage_table)
+        cur.execute("drop view b")
+        conn.commit()
+    except Exception as e:
+        print("Error:", str(e))
+        print("check if already updated")
+        conn.rollback()
+
+# update audit_status table for stg_student
+try:
+    count_lz = "SELECT COUNT(*) FROM loading_zone"
+    cur.execute(count_lz)
+    source_count = cur.fetchone()
+
+    aud_stat_st_table = "INSERT INTO Audit_Status(table_nm,audit_key,created_dt,update_dt,source_nm,source_count,target_count,target_insert,target_update) SELECT 'stg_student',%s,%s,%s,'loading_zone',%s,COUNT(*),COUNT(*),0 FROM stg_student s WHERE audit_key =s.audit_key"
+    cur.execute(aud_stat_st_table, (aud_key, aud_key, aud_key, source_count))
+
+    # commit changes
+    conn.commit()
+
+except Exception as e:
+    print("Error 6: ", str(e))
+    conn.rollback()
+
+    try:
+        insert_student_table = "INSERT INTO student (id_key,aid, a_name,attendancekey) SELECT id_key,aid, a_name,attendancekey from stg_student"
+        cur.execute(insert_student_table)
+        conn.commit()
+        upn_base_table = "update student set active_ind='N'"
+        cur.execute(upn_base_table)
+        view_base1 = " create view c as (select s.id_key,row_number() over (partition by s.aid order by s.attendancekey) from stg_student as s inner join student on s.aid=student.aid)"
+        cur.execute(view_base1)
+        upy_base_table = "update student set active_ind='Y' where id_key in ( select id_key from stg_student where id_key in (select id_key from c where row_number=1))"
+        cur.execute(upy_base_table)
+        cur.execute("drop view c")
+        conn.commit()
+    except Exception as e:
+        print("Error 7:", str(e))
+        print("check if already updated")
+        conn.rollback()
+
+# update audit status for student
+try:
+    count_base_table = "SELECT  COUNT(*) FROM stg_student "
+    cur.execute(count_base_table)
+    stg_count = cur.fetchone()
+
+    counti_base_tb = "SELECT SUM(CASE WHEN action_indicator = 'I' THEN 1 ELSE 0 END) AS insert_count FROM stg_student"
+    cur.execute(counti_base_tb)
+    base_icount = cur.fetchone()
+
+    countu_base_tb = "SELECT SUM(CASE WHEN action_indicator = 'U' THEN 1 ELSE 0 END) AS update_count FROM stg_student"
+    cur.execute(countu_base_tb)
+    base_ucount = cur.fetchone()
+
+    aud_stat_base_table = "INSERT INTO Audit_Status(Table_nm,Audit_key,created_dt,update_dt,Source_nm,Source_count,Target_count,Target_insert,Target_update) SELECT 'student',%s,%s,%s,'stg_student',%s,COUNT(*),%s,%s FROM student b WHERE Audit_key = b.audit_key"
+    cur.execute(aud_stat_base_table, (aud_key, aud_key, aud_key, stg_count, base_icount, base_ucount))
+
+    # status update
+    up_aud_stat = "UPDATE Audit_Status SET Status= CASE WHEN Source_count = Target_count THEN 'M' ELSE 'F' END"
+    cur.execute(up_aud_stat)
+
+    # commit changes
+    conn.commit()
+
+except Exception as e:
+    print("Error 8: ", str(e))
+    conn.rollback()
+
+    try:
+        trunc_stage_table = "truncate table stg_attendance"
+        cur.execute(trunc_stage_table)
+        conn.commit()
+    except Exception as e:
+        print("Error 9:", str(e))
+        conn.rollback()
+    try:
+        insert_stage_table = "INSERT INTO stg_attendance (id_key,aid,attendancekey,attendancedate,attendedyesno) SELECT MD5(CONCAT(attendancekey::text,attendancedate::text)),aid,attendancekey,attendancedate,attendedyesno from loading_zone"
+        cur.execute(insert_stage_table)
+        conn.commit()
+        view_st = "create view g as (select s.aid from stg_attendance as s inner join attendance on s.aid=attendance.aid)"
+        cur.execute(view_st)
+        inorup_stage_table = "update stg_attendance set action_indicator = case when aid in ( select aid from g) then 'U' else 'I' end"
+        cur.execute(inorup_stage_table)
+        cur.execute("drop view g")
+        conn.commit()
+    except Exception as e:
+        print("Error 10:", str(e))
+        print("check if already updated")
+        conn.rollback()
+
+# update audit_status table for stg_attendance
+try:
+    count_lz = "SELECT COUNT(*) FROM loading_zone"
+    cur.execute(count_lz)
+    source_count = cur.fetchone()
+
+    aud_stat_st_table = "INSERT INTO Audit_Status(table_nm,audit_key,created_dt,update_dt,source_nm,source_count,target_count,target_insert,target_update) SELECT 'stg_attendance',%s,%s,%s,'loading_zone',%s,COUNT(*),COUNT(*),0 FROM stg_attendance s WHERE audit_key =s.audit_key"
+    cur.execute(aud_stat_st_table, (aud_key, aud_key, aud_key, source_count))
+
+    # commit changes
+    conn.commit()
+
+except Exception as e:
+    print("Error 11: ", str(e))
+    conn.rollback()
+
+    try:
+        insert_attendance_table = "INSERT INTO attendance (id_key,aid,attendancekey,attendancedate,attendedyesno) SELECT id_key,aid,attendancekey,attendancedate,attendedyesno from stg_attendance"
+        cur.execute(insert_attendance_table)
+        conn.commit()
+        upn_base_table = "update attendance set active_ind='N'"
+        cur.execute(upn_base_table)
+        view_base = " create view f as (select s.id_key,row_number() over (partition by s.aid order by s.attendancekey) from stg_attendance as s inner join attendance on s.aid=attendance.aid)"
+        cur.execute(view_base)
+        upy_base_table = "update attendance set active_ind='Y' where id_key in ( select id_key from stg_attendance where id_key in (select id_key from f where row_number=1))"
+        cur.execute(upy_base_table)
+        cur.execute("drop view f")
+        conn.commit()
+    except Exception as e:
+        print("Error 12:", str(e))
+        print("check if already updated")
+        conn.rollback()
+
+# update audit status for attendance
+try:
+    count_base_table = "SELECT  COUNT(*) FROM stg_attendance"
+    cur.execute(count_base_table)
+    stg_count = cur.fetchone()
+
+    counti_base_tb = "SELECT SUM(CASE WHEN action_indicator = 'I' THEN 1 ELSE 0 END) AS insert_count FROM stg_attendance"
+    cur.execute(counti_base_tb)
+    base_icount = cur.fetchone()
+
+    countu_base_tb = "SELECT SUM(CASE WHEN action_indicator = 'U' THEN 1 ELSE 0 END) AS update_count FROM stg_attendance"
+    cur.execute(countu_base_tb)
+    base_ucount = cur.fetchone()
+
+    aud_stat_base_table = "INSERT INTO Audit_Status(Table_nm,Audit_key,created_dt,update_dt,Source_nm,Source_count,Target_count,Target_insert,Target_update) SELECT 'attendance',%s,%s,%s,'stg_attendance',%s,COUNT(*),%s,%s FROM stg_attendance b WHERE Audit_key = b.audit_key"
+    cur.execute(aud_stat_base_table, (aud_key, aud_key, aud_key, stg_count, base_icount, base_ucount))
+
+    # status update
+    up_aud_stat = "UPDATE Audit_Status SET Status= CASE WHEN Source_count = Target_count THEN 'M' ELSE 'F' END"
+    cur.execute(up_aud_stat)
+
+    # commit changes
+    conn.commit()
+
+except Exception as e:
+    print("Error 13===============: ", str(e))
+    conn.rollback()
+
+conn.close()
